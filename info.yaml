@@ -8,7 +8,7 @@ project:
   clock_hz:     25000000           # Clock frequency in Hz (or 0 if not applicable)
 
   # How many tiles your design occupies? A single tile is about 167x108 uM.
-  tiles: "1x1"          # Valid values: 1x1, 1x2, 2x2, 3x2, 4x2, 6x2 or 8x2
+  tiles: "1x2"          # Valid values: 1x1, 1x2, 2x2, 3x2, 4x2, 6x2 or 8x2
 
   # Your top module name must start with "tt_um_". Make it unique by including your github username:
   top_module:  "tt_um_ReactionGame"
@@ -38,8 +38,8 @@ pinout:
   ui[3]: "button_2"
   ui[4]: "button_3"
   ui[5]: "start"
-  ui[6]: "mode_game (0=Classic, 1=Target Match)"
-  ui[7]: "mode_player (0=1P, 1=2P)"
+  ui[6]: "mode_game"
+  ui[7]: "mode_player"
 
   # Outputs
   uo[0]: "vga_r[0]"
