@@ -1,52 +1,60 @@
 # Tiny Tapeout project information
 project:
-  title:        "RangeFinder"      # Project title
+  title:        "Reaction Time Game"      # Project title
   author:       "evstorms"         # Your name
   discord:      ""                 # Your discord username, for communication and automatically assigning you a Tapeout role (optional)
-  description:  "Computes the range (max - min) of a stream of 8-bit values"
-  language:     "Verilog"          # other examples include SystemVerilog, Amaranth, VHDL, etc
-  clock_hz:     0                  # Clock frequency in Hz (or 0 if not applicable)
+  description:  "Multiplayer reaction time game with VGA display output (640x480), supporting Classic and Target Match modes"
+  language:     "SystemVerilog"    # other examples include SystemVerilog, Amaranth, VHDL, etc
+  clock_hz:     25000000           # Clock frequency in Hz (or 0 if not applicable)
 
   # How many tiles your design occupies? A single tile is about 167x108 uM.
-  tiles: "1x1"          # Valid values: 1x1, 1x2, 2x2, 3x2, 4x2, 6x2 or 8x2
+  tiles: "4x2"          # Valid values: 1x1, 1x2, 2x2, 3x2, 4x2, 6x2 or 8x2
 
   # Your top module name must start with "tt_um_". Make it unique by including your github username:
-  top_module:  "tt_um_example"
+  top_module:  "tt_um_ReactionGame"
 
   # List your project's source files here.
   # Source files must be in ./src and you must list each source file separately, one per line.
   # Don't forget to also update `PROJECT_SOURCES` in test/Makefile.
   source_files:
     - "project.v"
-    - "RangeFinder.sv"
+    - "top.sv"
+    - "button_sync.sv"
+    - "lfsr16.sv"
+    - "game_controller.sv"
+    - "response_checker.sv"
+    - "core_timer.sv"
+    - "score_store.sv"
+    - "vga_controller.sv"
+    - "font_rom.sv"
 
 # The pinout of your project. Leave unused pins blank. DO NOT delete or add any pins.
 # This section is for the datasheet/website. Use descriptive names (e.g., RX, TX, MOSI, SCL, SEG_A, etc.).
 pinout:
   # Inputs
-  ui[0]: "data_in[0]"
-  ui[1]: "data_in[1]"
-  ui[2]: "data_in[2]"
-  ui[3]: "data_in[3]"
-  ui[4]: "data_in[4]"
-  ui[5]: "data_in[5]"
-  ui[6]: "data_in[6]"
-  ui[7]: "data_in[7]"
+  ui[0]: ""
+  ui[1]: "button_0"
+  ui[2]: "button_1"
+  ui[3]: "button_2"
+  ui[4]: "button_3"
+  ui[5]: "start"
+  ui[6]: "mode_game (0=Classic, 1=Target Match)"
+  ui[7]: "mode_player (0=1P, 1=2P)"
 
   # Outputs
-  uo[0]: "range[0]"
-  uo[1]: "range[1]"
-  uo[2]: "range[2]"
-  uo[3]: "range[3]"
-  uo[4]: "range[4]"
-  uo[5]: "range[5]"
-  uo[6]: "range[6]"
-  uo[7]: "range[7]"
+  uo[0]: "vga_r[0]"
+  uo[1]: "vga_r[1]"
+  uo[2]: "vga_g[0]"
+  uo[3]: "vga_g[1]"
+  uo[4]: "vga_b[0]"
+  uo[5]: "vga_b[1]"
+  uo[6]: "vga_hsync"
+  uo[7]: "vga_vsync"
 
   # Bidirectional pins
-  uio[0]: "go (input)"
-  uio[1]: "finish (input)"
-  uio[2]: "error (output)"
+  uio[0]: ""
+  uio[1]: ""
+  uio[2]: ""
   uio[3]: ""
   uio[4]: ""
   uio[5]: ""
