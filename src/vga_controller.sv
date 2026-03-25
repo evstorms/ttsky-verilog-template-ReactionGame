@@ -173,7 +173,7 @@ always_comb begin
 
     digit_col_offset = hcount - digit_slot_start; // 0–19
     digit_col        = digit_col_offset[4:2];      // >>2: 0-3=char, 4=gap
-    digit_row        = (vcount - 10'd436) >> 2;    // 0–5 (truncated to [2:0])
+    digit_row        = 3'((vcount - 10'd436) >> 2); // 0–5 (truncated to [2:0])
 
     // Select BCD nibble (MSB = thousands)
     case (digit_slot)
@@ -236,7 +236,7 @@ always_comb begin
 
     stat_col_offset = hcount - stat_slot_start; // 0–19
     stat_col        = stat_col_offset[4:2];      // 0-3=char, 4=gap
-    stat_row        = (vcount - 10'd364) >> 2;   // 0–5 (truncated to [2:0])
+    stat_row        = 3'((vcount - 10'd364) >> 2); // 0–5 (truncated to [2:0])
 end
 
 // String ROM: char indices 0-9='0'-'9', 10=P, 11=T, 12=I, 13=E,
@@ -325,7 +325,7 @@ always_comb begin
 
     mode_col_offset = hcount - mode_slot_start;
     mode_col        = mode_col_offset[4:2];
-    mode_row        = (vcount - 10'd100) >> 2;
+    mode_row        = 3'((vcount - 10'd100) >> 2);
 
     mode_char_5b = 5'd31;
     if (in_mode_block && mode_col < 3'd4) begin
@@ -338,6 +338,7 @@ always_comb begin
                 3'd4: mode_char_5b = 5'd21;
                 3'd5: mode_char_5b = 5'd12;
                 3'd6: mode_char_5b = 5'd20;
+                default: mode_char_5b = 5'd31;
             endcase
         end else begin
             case (mode_slot) // (blank) T A R G E T
@@ -348,6 +349,7 @@ always_comb begin
                 3'd4: mode_char_5b = 5'd22;
                 3'd5: mode_char_5b = 5'd13;
                 3'd6: mode_char_5b = 5'd11;
+                default: mode_char_5b = 5'd31;
             endcase
         end
     end
@@ -373,7 +375,7 @@ always_comb begin
 
     player_col_offset = hcount - player_slot_start;
     player_col        = player_col_offset[4:2];
-    player_row        = (vcount - 10'd100) >> 2;
+    player_row        = 3'((vcount - 10'd100) >> 2);
 
     player_char_5b = 5'd31;
     if (in_player_block && player_col < 3'd4) begin
