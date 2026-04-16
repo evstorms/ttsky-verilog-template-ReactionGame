@@ -99,6 +99,7 @@ endfunction
 
 // Slow counter for SHOW_WINNER
 logic [1:0] phase;
+logic [9:0] ms_cnt;
 
 always_ff @(posedge clk) begin
     if (!rst_n) begin
