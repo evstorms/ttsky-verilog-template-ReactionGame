@@ -303,6 +303,7 @@ always_comb begin
                 3'd4: mode_char_5b = 5'd21;
                 3'd5: mode_char_5b = 5'd12;
                 3'd6: mode_char_5b = 5'd20;
+                default: mode_char_5b = 5'd31;
             endcase
         end else begin
             case (mode_slot) // (blank) T A R G E T
@@ -313,6 +314,7 @@ always_comb begin
                 3'd4: mode_char_5b = 5'd22;
                 3'd5: mode_char_5b = 5'd13;
                 3'd6: mode_char_5b = 5'd11;
+                default: mode_char_5b = 5'd31;
             endcase
         end
     end
