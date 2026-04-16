@@ -3,7 +3,7 @@ module button_sync (
     input  logic rst_n, // Synchronous reset
     input  logic raw,   // Asynchronous input
 
-    output logic clean  // Synchronous output: single-cycle rising-edge pulse
+    output logic clean  
 );
 
     logic ff1, ff2, ff3;

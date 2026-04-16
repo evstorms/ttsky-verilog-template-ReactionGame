@@ -73,7 +73,7 @@ module game_controller (
             IDLE:        if (start)                                    next_state = WAIT_RANDOM;
             WAIT_RANDOM: if (any_btn_rise)                             next_state = FALSE_START;
                     else if (dly_done)                                 next_state = STIMULUS;
-            STIMULUS:    if (any_btn_rise && mode_player && p2_turn_r)  next_state = COMPARE;
+            STIMULUS:    if (any_btn_rise && mode_player && p2_turn_r) next_state = COMPARE;
                     else if (any_btn_rise)                             next_state = RESULT;
             FALSE_START: if (start)                                    next_state = RESULT;
             RESULT:      if (start && !mode_player)                    next_state = IDLE;

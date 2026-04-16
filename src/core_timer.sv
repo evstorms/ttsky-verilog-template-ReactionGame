@@ -12,7 +12,7 @@ module core_timer (
     output logic        dly_done    // Single-cycle pulse when delay countdown hits zero
 );
 
-    logic [14:0] prescalar; // counts 0→24999, resets, pulses tick_1ms at terminal count
+    logic [14:0] prescalar; // counts 0 to 24999, resets, pulses tick_1ms at terminal count
     logic [13:0] rxn_counter; // increments on (rxn_en & tick_1ms), clears on rxn_clr
     logic [12:0] dly_counter; //loads (dly_seed + 13'd1000) on dly_load decrements on (dly_en & tick_1ms) pulses dly_done when hits zero
 
@@ -20,7 +20,7 @@ module core_timer (
     always_ff @(posedge clk) begin
         if (~rst_n) begin
             prescalar <= 0;
-            clk_1ms <= 0;
+            clk_1ms <= 0;   
         end else begin
             if (prescalar == 24999) begin
                 prescalar <= 0;

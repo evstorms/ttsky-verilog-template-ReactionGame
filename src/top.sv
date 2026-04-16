@@ -16,8 +16,7 @@ module top (
     output logic        vga_vsync    // VGA vertical sync
 );
 
-    // Reset synchronizer: button is active-high, design uses active-low rst_n
-    // Sync FFs power up to 0 → rst_n starts low → design boots in reset
+    // Reset 
     logic rst_sync, rst_n;
     always_ff @(posedge clk) begin
         rst_sync <= ~rst_btn;
@@ -47,7 +46,7 @@ module top (
     button_sync u_btn2      (.clk, .rst_n, .raw(button_2), .clean(btn_clean[2]));
     button_sync u_btn3      (.clk, .rst_n, .raw(button_3), .clean(btn_clean[3]));
 
-    // LFSR: bits[15:14] → 2-bit quadrant; bits[11:0] → 12-bit delay seed
+    // Bits[15:14] → 2-bit quadrant; bits[11:0] → 12-bit delay seed
     lfsr16 u_lfsr (.clk, .rst_n, .en(lfsr_en), .out(lfsr_out));
 
     // Game controller (FSM)
@@ -83,7 +82,6 @@ module top (
         .rxn_time, .dly_done
     );
 
-    // full_reset: fires when start is pressed during SHOW_WINNER (disp_mode==7)
     assign full_reset = start_clean && (disp_mode == 3'd7);
 
     // Score store

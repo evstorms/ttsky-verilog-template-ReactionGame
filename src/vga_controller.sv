@@ -20,12 +20,7 @@ module vga_controller (
     output logic        vga_vsync     // Vertical sync
 );
 
-// ============================================================
-// 1. VGA Sync Generator
-//    640x480 @ 60Hz, 25 MHz pixel clock
-//    Horizontal: 640 active | 16 FP | 96 sync | 48 BP = 800 total
-//    Vertical:   480 active | 10 FP |  2 sync | 33 BP = 525 total
-// ============================================================
+// VGA sync generator
 logic [9:0] hcount, vcount;
 logic active;
 
@@ -45,9 +40,7 @@ assign active    = (hcount < 10'd640) && (vcount < 10'd480);
 assign vga_hsync = ~((hcount >= 10'd656) && (hcount < 10'd752));
 assign vga_vsync = ~((vcount >= 10'd490) && (vcount < 10'd492));
 
-// ============================================================
-// 2. Region Decode (combinational, priority-ordered)
-// ============================================================
+//Region Decode
 typedef enum logic [2:0] {
     BACKGROUND  = 3'd0,
     QUAD_TOP    = 3'd1,
@@ -61,8 +54,8 @@ typedef enum logic [2:0] {
 region_t region;
 
 logic [4:0] htile, vtile;
-assign htile = hcount[9:5];   // hcount / 32
-assign vtile = vcount[9:5];   // vcount / 32
+assign htile = hcount[9:5];   
+assign vtile = vcount[9:5];   
 
 always_comb begin
     if (!active)
@@ -83,19 +76,14 @@ always_comb begin
         region = BACKGROUND;
 end
 
-// Target quadrant from LFSR: 00→TOP, 01→LEFT, 10→CENTER, 11→RIGHT
-// region enum encodes quads as 1–4, so region[1:0] == lfsr_in+1 (mod 4) for any quad
+
 logic is_quad_region, is_target_quad;
-assign is_quad_region = (region == QUAD_TOP) || (region == QUAD_LEFT) ||
-                        (region == QUAD_CENTER) || (region == QUAD_RIGHT);
-// Classic mode: all quads are "target"; Target mode: only the LFSR-selected quad
+assign is_quad_region = (region == QUAD_TOP) || (region == QUAD_LEFT) || (region == QUAD_CENTER) || (region == QUAD_RIGHT);
 assign is_target_quad = is_quad_region && (~mode_target || (region[1:0] == lfsr_in + 2'd1));
 
-// ============================================================
-// 3. BCD Conversion — double-dabble, fully combinational
-// ============================================================
+// BCD conversion
 function automatic [15:0] bin2bcd(input [13:0] b);
-    logic [29:0] scratch; // [29:14]=BCD (4 digits), [13:0]=binary
+    logic [29:0] scratch; 
     integer      i;
     scratch        = '0;
     scratch[13:0]  = b;
@@ -106,16 +94,10 @@ function automatic [15:0] bin2bcd(input [13:0] b);
         if (scratch[29:26] >= 4'd5) scratch[29:26] = scratch[29:26] + 4'd3;
         scratch = scratch << 1;
     end
-    // scratch[29:26]=thousands, [25:22]=hundreds, [21:18]=tens, [17:14]=ones
     bin2bcd = scratch[29:14];
 endfunction
 
-// ============================================================
-// 4. Slow Counter — ms-based for SHOW_WINNER phase alternation
-//    670ms per phase; uses clk_1ms enable to avoid 26-bit counter
-//    phase: 00→P1 time, 01→P2 time, 10/11→winner text
-// ============================================================
-logic [9:0] ms_cnt;  // counts 0–669, then wraps and increments phase
+// Slow counter for SHOW_WINNER
 logic [1:0] phase;
 
 always_ff @(posedge clk) begin
@@ -132,18 +114,13 @@ always_ff @(posedge clk) begin
     end
 end
 
-// Shared BCD converter — mux input instead of muxing two outputs
-// phase==00 in SHOW_WINNER → display p1_time; all other cases → rxn_time
+// Shared BCD converter
 logic [13:0] bcd_mux_in;
 logic [15:0] bcd_disp;
 assign bcd_mux_in = (disp_mode == 3'd7 && phase == 2'b00) ? p1_time : rxn_time;
 assign bcd_disp   = bin2bcd(bcd_mux_in);
 
-// ============================================================
-// 5a. Digit Display (TIME_DISP region)
-//     Digit block: hcount∈[280,360), vcount∈[436,460)
-//     4 digits × 20px stride (16px char + 4px gap), 24px tall (6 rows × 4px)
-// ============================================================
+// Digit Display (TIME_DISP region)
 logic in_digit_block;
 assign in_digit_block = (hcount >= 10'd280) && (hcount < 10'd360) &&
                         (vcount >= 10'd436) && (vcount < 10'd460);
@@ -159,13 +136,11 @@ logic [3:0] dig_bitmap;
 logic       dig_pixel;
 
 always_comb begin
-    // Default to avoid latches
     digit_slot       = 2'd0;
     digit_slot_start = 10'd280;
     digit_char_4b    = 4'd0;
     dig_char_5b      = 5'd31; // blank
 
-    // Slot by range (avoids non-power-of-2 division)
     if      (hcount < 10'd300) begin digit_slot = 2'd0; digit_slot_start = 10'd280; end
     else if (hcount < 10'd320) begin digit_slot = 2'd1; digit_slot_start = 10'd300; end
     else if (hcount < 10'd340) begin digit_slot = 2'd2; digit_slot_start = 10'd320; end
@@ -173,7 +148,7 @@ always_comb begin
 
     digit_col_offset = hcount - digit_slot_start; // 0–19
     digit_col        = digit_col_offset[4:2];      // >>2: 0-3=char, 4=gap
-    digit_row        = 3'((vcount - 10'd436) >> 2); // 0–5 (truncated to [2:0])
+    digit_row        = (vcount - 10'd436) >> 2;    // 0–5 (truncated to [2:0])
 
     // Select BCD nibble (MSB = thousands)
     case (digit_slot)
@@ -183,7 +158,7 @@ always_comb begin
         default: digit_char_4b = bcd_disp[3:0];   // ones
     endcase
 
-    // Leading zero suppression: blank thousands when 0, blank hundreds when both 0
+    // Leading zero suppression
     if (digit_col >= 3'd4) begin
         dig_char_5b = 5'd31; // gap → blank
     end else if (digit_slot == 2'd0 && bcd_disp[15:12] == 4'd0) begin
@@ -201,14 +176,9 @@ font_rom dig_rom (
     .bitmap (dig_bitmap)
 );
 
-// MSB of bitmap = leftmost pixel; blank gap pixels
 assign dig_pixel = (digit_col < 3'd4) && dig_bitmap[3 - digit_col[1:0]];
 
-// ============================================================
-// 5b. Status Text (STATUS_BAR region)
-//     Text block: vcount∈[364,388), 24px tall (6 rows × 4px)
-//     Each char: 16px wide (4 font px × 4x scale) + 4px gap = 20px stride
-// ============================================================
+// Status Text (STATUS_BAR region)
 logic in_stat_block;
 assign in_stat_block = (hcount >= 10'd250) && (hcount < 10'd390) &&
                        (vcount >= 10'd364) && (vcount < 10'd388);
@@ -222,8 +192,6 @@ logic [4:0] stat_char_5b;     // character index to font_rom
 logic [3:0] stat_bitmap;
 logic       stat_pixel;
 
-// Slot selection — fixed base at h=250, 7 slots × 20px each
-// All comparisons are against constants → no variable-operand adders
 always_comb begin
     stat_slot       = 3'd6;
     stat_slot_start = 10'd370;
@@ -236,7 +204,7 @@ always_comb begin
 
     stat_col_offset = hcount - stat_slot_start; // 0–19
     stat_col        = stat_col_offset[4:2];      // 0-3=char, 4=gap
-    stat_row        = 3'((vcount - 10'd364) >> 2); // 0–5 (truncated to [2:0])
+    stat_row        = (vcount - 10'd364) >> 2;   // 0–5 (truncated to [2:0])
 end
 
 // String ROM: char indices 0-9='0'-'9', 10=P, 11=T, 12=I, 13=E,
@@ -293,11 +261,7 @@ font_rom stat_rom (
 
 assign stat_pixel = (stat_col < 3'd4) && stat_bitmap[3 - stat_col[1:0]];
 
-// ============================================================
-// 5c. Info Panels
-//     Left  (game mode)   : hcount∈[26,166),  vcount∈[100,124)  — 7 chars
-//     Right (player count): hcount∈[524,564), vcount∈[100,124)  — 2 chars
-// ============================================================
+// Info Panels
 logic in_mode_block, in_player_block;
 assign in_mode_block   = (hcount >= 10'd26)  && (hcount < 10'd166) &&
                          (vcount >= 10'd100) && (vcount < 10'd124);
@@ -325,7 +289,7 @@ always_comb begin
 
     mode_col_offset = hcount - mode_slot_start;
     mode_col        = mode_col_offset[4:2];
-    mode_row        = 3'((vcount - 10'd100) >> 2);
+    mode_row        = (vcount - 10'd100) >> 2;
 
     mode_char_5b = 5'd31;
     if (in_mode_block && mode_col < 3'd4) begin
@@ -338,7 +302,6 @@ always_comb begin
                 3'd4: mode_char_5b = 5'd21;
                 3'd5: mode_char_5b = 5'd12;
                 3'd6: mode_char_5b = 5'd20;
-                default: mode_char_5b = 5'd31;
             endcase
         end else begin
             case (mode_slot) // (blank) T A R G E T
@@ -349,7 +312,6 @@ always_comb begin
                 3'd4: mode_char_5b = 5'd22;
                 3'd5: mode_char_5b = 5'd13;
                 3'd6: mode_char_5b = 5'd11;
-                default: mode_char_5b = 5'd31;
             endcase
         end
     end
@@ -375,7 +337,7 @@ always_comb begin
 
     player_col_offset = hcount - player_slot_start;
     player_col        = player_col_offset[4:2];
-    player_row        = 3'((vcount - 10'd100) >> 2);
+    player_row        = (vcount - 10'd100) >> 2;
 
     player_char_5b = 5'd31;
     if (in_player_block && player_col < 3'd4) begin
