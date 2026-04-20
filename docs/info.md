@@ -1,39 +1,76 @@
-<!---
-
-This file is used to generate your project datasheet. Please fill in the information below and delete any unused
-sections.
-
-You can also include images in this folder and reference them in the markdown. Each image must be less than
-512 kb in size, and the combined size of all images must be less than 1 MB.
--->
-
 ## How it works
 
-RangeFinder computes the range (maximum minus minimum) of a stream of 8-bit values.
+This is a multiplayer reaction time game with VGA display output (640×480 @ 60 Hz). The design supports two game modes and one or two players.
 
-Operation is controlled by two signals:
-- **go** (`uio[0]`): Assert for one cycle to start a new measurement. The value on `data_in` that cycle becomes both the initial maximum and minimum.
-- **finish** (`uio[1]`): Assert for one cycle to end the measurement. The computed range (max − min) is latched onto `range`.
+### Game Modes
 
-While the module is running (between `go` and `finish`), every new `data_in` value is compared against the tracked maximum and minimum, which are updated accordingly.
+- **Classic Mode** (`mode_game = 0`): Any button press after the stimulus appears counts as a valid response.
+- **Target Match Mode** (`mode_game = 1`): Only the button corresponding to the highlighted quadrant is correct. The target quadrant is selected randomly using a 16-bit LFSR.
 
-An **error** flag (`uio[2]`) is raised if any of the following illegal sequences occur:
-- `go` is asserted while the module is already running
-- `finish` is asserted while the module is not running
-- `go` is asserted while the error flag is already set
+### Player Modes
 
-The error flag is cleared on the next `go` after a reset.
+- **1-Player** (`mode_player = 0`): Single round; result is displayed immediately after the button press.
+- **2-Player** (`mode_player = 1`): P1 plays first, then P2 plays the same type of round. After both finish, the winner is determined by comparing reaction times (with validity — a wrong button in Target Match counts as a loss).
+
+### Game Flow (FSM)
+
+The game controller is an 8-state FSM:
+
+1. **IDLE** — Waiting for the Start button. Screen shows gray quadrants and "P1 PLAY".
+2. **WAIT_RANDOM** — A random delay of 1,000–5,095 ms (seeded from the LFSR) counts down. Buttons pressed here trigger a false start.
+3. **STIMULUS** — The target quadrant turns green (yellow border in Target Match). The reaction timer starts counting in 1 ms increments.
+4. **RESULT** — Button pressed; timer freezes. Displays reaction time in green (correct) or red (wrong button in Target Match).
+5. **FALSE_START** — All quadrants turn red, "EARLY" text displayed. Press Start to continue.
+6. **IDLE_2P** — P1's score is saved; "P2 PLAY" is shown. Waiting for P2 to press Start.
+7. **COMPARE** — Single-cycle state: winner logic evaluates P1 vs P2 times.
+8. **SHOW_WINNER** — Alternates between showing P1's time (~670 ms), P2's time (~670 ms), then the winner text ("P1 WIN", "P2 WIN", or "TIE").
+
+### Timing
+
+The 25 MHz clock is prescaled to a 1 ms tick (`clk_1ms`) by a 25,000-cycle counter in `core_timer`. The reaction counter increments on each tick while in STIMULUS state, saturating at 9,999 ms. The random delay counter loads `lfsr[11:0] + 1000` on game start and decrements each ms.
+
+### VGA Display
+
+The screen is divided into regions using 32×32 pixel tiles:
+- **Four quadrants** (TOP, LEFT, CENTER, RIGHT): show the stimulus and game state via color.
+- **Status bar**: 6-character text (e.g., "P1 PLAY", "EARLY", "P2 PLAY") rendered using a 4×6 pixel font scaled 4× to 16×24 pixels.
+- **Time display**: 4-digit BCD reaction time (with leading zero suppression), rendered in the lower center of the screen.
+- **Mode/player labels**: "CLASSIC"/"TARGET" and "1P"/"2P" shown in the top-left and top-right corners at all times.
+
+Button inputs are debounced using a 3-flip-flop synchronizer that produces a single-cycle rising-edge pulse per press.
 
 ## How to test
 
-1. Assert `rst_n = 0` for several cycles to reset, then de-assert (`rst_n = 1`).
-2. Place the first value on `ui_in[7:0]` and assert `uio_in[0]` (go) for one cycle.
-3. For each subsequent value, place it on `ui_in[7:0]` while keeping `uio_in[1:0] = 0`.
-4. To end the stream, assert `uio_in[1]` (finish) for one cycle.
-5. Read the result from `uo_out[7:0]` (range). Check `uio_out[2]` (error) to confirm no error occurred.
+1. Assert `rst_n = 0` for several cycles to reset, then release (`rst_n = 1`).
+2. Set `ui_in[6]` (mode_game) and `ui_in[7]` (mode_player) to select game and player mode.
+3. Press Start (`ui_in[5] = 1` for one cycle). The screen goes dark (random delay).
+4. Wait for the green stimulus to appear. Press the correct reaction button (`ui_in[1]`–`ui_in[4]`).
+5. The reaction time (in ms) is displayed on screen. Press Start again to replay.
 
-**Example:** Streaming the values 10, 20, 5 produces range = 20 − 5 = **15**.
+For 2-player mode: after P1's result screen, press Start to hand off to P2. After P2 reacts, the winner is displayed.
+
+To test false start: press any reaction button before the stimulus appears (during the dark period). The screen turns red with "EARLY".
+
+## Pin Assignments
+
+| Pin | Signal | Description |
+|-----|--------|-------------|
+| `ui_in[1]` | `button_0` | Reaction button 0 (TOP quadrant) |
+| `ui_in[2]` | `button_1` | Reaction button 1 (LEFT quadrant) |
+| `ui_in[3]` | `button_2` | Reaction button 2 (CENTER quadrant) |
+| `ui_in[4]` | `button_3` | Reaction button 3 (RIGHT quadrant) |
+| `ui_in[5]` | `start` | Start / advance button |
+| `ui_in[6]` | `mode_game` | 0 = Classic, 1 = Target Match |
+| `ui_in[7]` | `mode_player` | 0 = 1-Player, 1 = 2-Player |
+| `uo_out[1:0]` | `vga_r[1:0]` | VGA red channel (2-bit) |
+| `uo_out[3:2]` | `vga_g[1:0]` | VGA green channel (2-bit) |
+| `uo_out[5:4]` | `vga_b[1:0]` | VGA blue channel (2-bit) |
+| `uo_out[6]` | `vga_hsync` | VGA horizontal sync |
+| `uo_out[7]` | `vga_vsync` | VGA vertical sync |
 
 ## External hardware
 
-None required.
+- VGA monitor with standard 640×480 @ 60 Hz support
+- VGA connector with 2-bit R/G/B resistor DAC (e.g., 270 Ω on MSB, 560 Ω on LSB per channel)
+- 5–6 momentary push buttons (Start + 4 reaction buttons)
+- 2 switches (game mode, player mode)
