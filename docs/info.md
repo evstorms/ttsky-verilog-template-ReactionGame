@@ -17,39 +17,37 @@ This is a multiplayer reaction time game with VGA display output (640×480 @ 60 
 The game controller is an 8-state FSM:
 
 1. **IDLE** — Waiting for the Start button. Screen shows gray quadrants and "P1 PLAY".
-2. **WAIT_RANDOM** — A random delay of 1,000–5,095 ms (seeded from the LFSR) counts down. Buttons pressed here trigger a false start.
-3. **STIMULUS** — The target quadrant turns green (yellow border in Target Match). The reaction timer starts counting in 1 ms increments.
+2. **WAIT_RANDOM** — A random delay of 1,000–5,095 ms counts down. Buttons pressed here trigger a false start.
+3. **STIMULUS** — The target quadrant turns green. The reaction timer starts counting in 1 ms increments.
 4. **RESULT** — Button pressed; timer freezes. Displays reaction time in green (correct) or red (wrong button in Target Match).
 5. **FALSE_START** — All quadrants turn red, "EARLY" text displayed. Press Start to continue.
 6. **IDLE_2P** — P1's score is saved; "P2 PLAY" is shown. Waiting for P2 to press Start.
 7. **COMPARE** — Single-cycle state: winner logic evaluates P1 vs P2 times.
-8. **SHOW_WINNER** — Alternates between showing P1's time (~670 ms), P2's time (~670 ms), then the winner text ("P1 WIN", "P2 WIN", or "TIE").
+8. **SHOW_WINNER** — Alternates between showing P1's time, P2's time, then the winner text ("P1 WIN", "P2 WIN", or "TIE").
 
 ### Timing
 
-The 25 MHz clock is prescaled to a 1 ms tick (`clk_1ms`) by a 25,000-cycle counter in `core_timer`. The reaction counter increments on each tick while in STIMULUS state, saturating at 9,999 ms. The random delay counter loads `lfsr[11:0] + 1000` on game start and decrements each ms.
+The 25 MHz clock is prescaled to a 1 ms tick by a 25,000-cycle counter in `core_timer`. The reaction counter increments on each tick while in STIMULUS state, saturating at 9,999 ms. The random delay counter loads `lfsr[11:0] + 1000` on game start and decrements each ms.
 
 ### VGA Display
 
 The screen is divided into regions using 32×32 pixel tiles:
 - **Four quadrants** (TOP, LEFT, CENTER, RIGHT): show the stimulus and game state via color.
-- **Status bar**: 6-character text (e.g., "P1 PLAY", "EARLY", "P2 PLAY") rendered using a 4×6 pixel font scaled 4× to 16×24 pixels.
+- **Status bar**: 6-character text (e.g., "P1 PLAY", "EARLY", "P2 PLAY").
 - **Time display**: 4-digit BCD reaction time (with leading zero suppression), rendered in the lower center of the screen.
 - **Mode/player labels**: "CLASSIC"/"TARGET" and "1P"/"2P" shown in the top-left and top-right corners at all times.
-
-Button inputs are debounced using a 3-flip-flop synchronizer that produces a single-cycle rising-edge pulse per press.
 
 ## How to test
 
 1. Assert `rst_n = 0` for several cycles to reset, then release (`rst_n = 1`).
-2. Set `ui_in[6]` (mode_game) and `ui_in[7]` (mode_player) to select game and player mode.
-3. Press Start (`ui_in[5] = 1` for one cycle). The screen goes dark (random delay).
-4. Wait for the green stimulus to appear. Press the correct reaction button (`ui_in[1]`–`ui_in[4]`).
+2. Set mode_game and mode_player to select game and player mode.
+3. Press Start. The screen goes dark for random delay.
+4. Wait for the green stimulus to appear. Press the correct reaction button.
 5. The reaction time (in ms) is displayed on screen. Press Start again to replay.
 
 For 2-player mode: after P1's result screen, press Start to hand off to P2. After P2 reacts, the winner is displayed.
 
-To test false start: press any reaction button before the stimulus appears (during the dark period). The screen turns red with "EARLY".
+To test false start: press any reaction button before the stimulus appears. The screen turns red with "EARLY".
 
 ## Pin Assignments
 
@@ -71,6 +69,6 @@ To test false start: press any reaction button before the stimulus appears (duri
 ## External hardware
 
 - VGA monitor with standard 640×480 @ 60 Hz support
-- VGA connector with 2-bit R/G/B resistor DAC (e.g., 270 Ω on MSB, 560 Ω on LSB per channel)
-- 5–6 momentary push buttons (Start + 4 reaction buttons)
-- 2 switches (game mode, player mode)
+- VGA connector with 2-bit R/G/B resistor DAC 
+- 5–6 momentary push buttons 
+- 2 switches 
