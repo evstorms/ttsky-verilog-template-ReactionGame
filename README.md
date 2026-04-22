@@ -1,42 +1,20 @@
-![](../../workflows/gds/badge.svg) ![](../../workflows/docs/badge.svg) ![](../../workflows/test/badge.svg) ![](../../workflows/fpga/badge.svg)
+# Reaction Time Game — tt_um_peterhan_ReactionGame
 
-# Tiny Tapeout Verilog Project Template
+A multiplayer reaction time game with VGA display output, implemented in SystemVerilog for Tiny Tapeout Sky26a.
 
-- [Read the documentation for project](docs/info.md)
+[Full documentation](docs/info.md)
 
-## What is Tiny Tapeout?
+## Overview
 
-Tiny Tapeout is an educational project that aims to make it easier and cheaper than ever to get your digital and analog designs manufactured on a real chip.
+Players press a button as quickly as possible after a stimulus appears on screen. The design supports two game modes and one or two players:
 
-To learn more and get started, visit https://tinytapeout.com.
+- **Classic Mode**: Any button press after the stimulus is valid.
+- **Target Match Mode**: Only the button matching the highlighted quadrant scores — wrong button counts as a loss.
+- **1-Player**: Single round with reaction time displayed in milliseconds.
+- **2-Player**: P1 and P2 each play a round; the faster (valid) player wins. A winner screen cycles through both times before announcing the result.
 
-## Set up your Verilog project
+## External Hardware
 
-1. Add your Verilog files to the `src` folder.
-2. Edit the [info.yaml](info.yaml) and update information about your project, paying special attention to the `source_files` and `top_module` properties. If you are upgrading an existing Tiny Tapeout project, check out our [online info.yaml migration tool](https://tinytapeout.github.io/tt-yaml-upgrade-tool/).
-3. Edit [docs/info.md](docs/info.md) and add a description of your project.
-4. Adapt the testbench to your design. See [test/README.md](test/README.md) for more information.
-
-The GitHub action will automatically build the ASIC files using [LibreLane](https://www.zerotoasiccourse.com/terminology/librelane/).
-
-## Enable GitHub actions to build the results page
-
-- [Enabling GitHub Pages](https://tinytapeout.com/faq/#my-github-action-is-failing-on-the-pages-part)
-
-## Resources
-
-- [FAQ](https://tinytapeout.com/faq/)
-- [Digital design lessons](https://tinytapeout.com/digital_design/)
-- [Learn how semiconductors work](https://tinytapeout.com/siliwiz/)
-- [Join the community](https://tinytapeout.com/discord)
-- [Build your design locally](https://www.tinytapeout.com/guides/local-hardening/)
-
-## What next?
-
-- [Submit your design to the next shuttle](https://app.tinytapeout.com/).
-- Edit [this README](README.md) and explain your design, how it works, and how to test it.
-- Share your project on your social network of choice:
-  - LinkedIn [#tinytapeout](https://www.linkedin.com/search/results/content/?keywords=%23tinytapeout) [@TinyTapeout](https://www.linkedin.com/company/100708654/)
-  - Mastodon [#tinytapeout](https://chaos.social/tags/tinytapeout) [@matthewvenn](https://chaos.social/@matthewvenn)
-  - X (formerly Twitter) [#tinytapeout](https://twitter.com/hashtag/tinytapeout) [@tinytapeout](https://twitter.com/tinytapeout)
-  - Bluesky [@tinytapeout.com](https://bsky.app/profile/tinytapeout.com)
+- VGA monitor (640×480 @ 60 Hz)
+- VGA resistor DAC (270 Ω / 560 Ω per channel)
+- 5 momentary buttons + 2 mode switches
