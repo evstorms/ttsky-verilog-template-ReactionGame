@@ -37,7 +37,7 @@ module tt_um_peterhan_ReactionGame (
   );
 
   // uo_out: VGA signals
-  assign uo_out  = {vga_vsync, vga_hsync, vga_b, vga_g, vga_r};
+  assign uo_out = {vga_hsync, vga_b[0], vga_g[0], vga_r[0], vga_vsync, vga_b[1], vga_g[1], vga_r[1]};
 
   // uio unused
   assign uio_out = 8'h00;

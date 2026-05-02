@@ -42,14 +42,14 @@ pinout:
   ui[7]: "mode_player"
 
   # Outputs
-  uo[0]: "vga_r[0]"
-  uo[1]: "vga_r[1]"
-  uo[2]: "vga_g[0]"
-  uo[3]: "vga_g[1]"
-  uo[4]: "vga_b[0]"
-  uo[5]: "vga_b[1]"
-  uo[6]: "vga_hsync"
-  uo[7]: "vga_vsync"
+  uo[0]: "vga_r[1]"
+  uo[1]: "vga_g[1]"
+  uo[2]: "vga_b[1]"
+  uo[3]: "vga_vsync"
+  uo[4]: "vga_r[0]"
+  uo[5]: "vga_g[0]"
+  uo[6]: "vga_b[0]"
+  uo[7]: "vga_hsync"
 
   # Bidirectional pins
   uio[0]: ""
