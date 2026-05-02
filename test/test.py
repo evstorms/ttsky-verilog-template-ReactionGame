@@ -30,7 +30,8 @@ async def test_project(dut):
     hsync_vals = set()
     for _ in range(2000):
         await RisingEdge(dut.clk)
-        hsync_vals.add((int(dut.uo_out.value) >> 6) & 1)
+        hsync_vals.add((int(dut.uo_out.value) >> 7) & 1)
+
 
     assert len(hsync_vals) == 2, f"hsync stuck, only saw values: {hsync_vals}"
     dut._log.info("PASS: hsync toggling")
